@@ -1,27 +1,34 @@
 pipeline {
     agent any
-    
     stages {
-        stage('Build') {
-            steps {
-                echo 'Building...'
-            }
-        }
-        stage('Test') {
-            steps {
-                echo 'Testing...'
-            }
-        }
         stage('Deploy') {
             steps {
-                echo 'Deploying...'
+                script {
+                    def remoteDirectory = ""
+                    if (env.BRANCH_NAME == 'main') {
+                        remoteDirectory = '/var/www/html'
+                    }
+                    
+                    sshPublisher(
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'ApacheServer',
+                                transfers: [
+                                    sshTransfer(
+                                        sourceFiles: '**/*.html',
+                                        remoteDirectory: remoteDirectory,
+                                        removePrefix: '',
+                                        execCommand: ''
+                                    )
+                                ],
+                                usePromotionTimestamp: false,
+                                useWorkspaceInPromotion: false,
+                                verbose: true
+                            )
+                        ]
+                    )
+                }
             }
-        }
-    }
-    
-    post {
-        always {
-            echo "Done!"
         }
     }
 }
